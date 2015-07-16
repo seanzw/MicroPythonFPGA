@@ -43,5 +43,7 @@ cat /sys/devices/sopc.0/ffb40000.usb/gadget/lun0/file
 
 `micropython/minimal` **without** CROSS_COMPILE on Ubuntu64 OK
 
+    $ make run
+
 
 
