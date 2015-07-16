@@ -16,3 +16,13 @@ The hardware BootROM finds and runs the preloader on the 0xA2 partition.
 
 You can generate a preloader with bsp-editor, which needs a `hps_isw_handoff` folder.
 
+### Tips
+You can boot the target board into Linux and transfer file into the FAT partition without a SD card reader. Just mount it.
+```
+mount /dev/mmcblk0p1 /mnt
+```
+Notice that some time you will get an error as it is not properly unmounted. Try this:
+```
+echo -n "/dev/mmcblk0p1" > /sys/devices/sopc.0/ffb40000.usb/gadget/lun0/file
+cat /sys/devices/sopc.0/ffb40000.usb/gadget/lun0/file
+```
