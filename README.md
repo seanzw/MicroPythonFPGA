@@ -44,7 +44,7 @@ cat /sys/devices/sopc.0/ffb40000.usb/gadget/lun0/file
 `micropython/unix` on Windows Cygwin OK
     
     $ apt-cyg install libffi6 libffi-devel pkg-config
-    $ apt-cyg install libffi6 libffi-devel pkg-config
+    $ export PKG_CONFIG_PATH="/lib/pkgconfig"
 
 `micropython/minimal` **without** CROSS_COMPILE on Ubuntu64 OK
 
