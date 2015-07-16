@@ -41,6 +41,10 @@ cat /sys/devices/sopc.0/ffb40000.usb/gadget/lun0/file
     $ brew install pkg-config libffi
     $ export PKG_CONFIG_PATH=/usr/local/Cellar/libffi/3.0.13/lib/pkgconfig/
 
+`micropython/unix` on Windows Cygwin OK
+    
+    Needs to install libffi
+
 `micropython/minimal` **without** CROSS_COMPILE on Ubuntu64 OK
 
     $ make run
