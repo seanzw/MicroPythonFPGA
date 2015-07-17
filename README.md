@@ -28,27 +28,28 @@ cat /sys/devices/sopc.0/ffb40000.usb/gadget/lun0/file
 ```
 
 ### Compilation methods tried
-`my_first_hps` on Windows embedded shell OK
+* `my_first_hps` on Windows embedded shell OK
 
-`my_first_hps` on Ubuntu64 without embedded shell OK
+* `my_first_hps` on Ubuntu64 without embedded shell OK
 
-`micropython/Windows` on VS OK
+* `micropython/Windows` on VS OK
 
-`micropython/unix` on Ubuntu32, Ubuntu64 OK
+* `micropython/unix` on Ubuntu32, Ubuntu64 OK
 
-`micropython/unix` on OSX OK
+* `micropython/unix` on OSX OK
 
-    $ brew install pkg-config libffi
-    $ export PKG_CONFIG_PATH=/usr/local/Cellar/libffi/3.0.13/lib/pkgconfig/
+        $ brew install pkg-config libffi
+        $ export PKG_CONFIG_PATH=/usr/local/Cellar/libffi/3.0.13/lib/pkgconfig/
 
-`micropython/unix` on Windows Cygwin OK
+* `micropython/unix` on Windows Cygwin OK
     
-    $ apt-cyg install libffi6 libffi-devel pkg-config
-    $ export PKG_CONFIG_PATH="/lib/pkgconfig"
+        $ apt-cyg install libffi6 libffi-devel pkg-config
+        $ export PKG_CONFIG_PATH="/lib/pkgconfig"
 
-`micropython/minimal` **without** CROSS_COMPILE on Ubuntu64 OK
+* `micropython/minimal` **without** CROSS_COMPILE on Mac Ubuntu64 OK
 
-    $ make run
+        $ make run
 
+* `micropython/unix-cpy` CROSS_COMPILE on Windows embedded shell, Mac Ubuntu64 OK
 
 
