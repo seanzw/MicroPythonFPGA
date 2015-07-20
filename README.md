@@ -52,4 +52,40 @@ cat /sys/devices/sopc.0/ffb40000.usb/gadget/lun0/file
 
 * `micropython/unix-cpy` CROSS_COMPILE on Windows embedded shell, Mac Ubuntu64 OK
 
+### GC
+
+In `py/gc.h`, there is the `gc_collect(): void`, but it needs to be implemented by the port, e.g. in `unix/gccollect.c`, or `minimal/main.c`.
+
+In `bare-arm/main.c`:
+
+    gc_collect(): void {} // empty function?
+
+In `minimal/main.c`:
+
+    gc_collect(): void { // WARNING: doesn't track CPU regs for root ptrs
+        val dummy: void* // used to track stack boundary
+        gc_collect_start()
+        gc_collect_root(&dummy, (stack_top - &dummy) / int_size)
+        gc_collect_end()
+        gc_dump_info()
+    }
+    
+In `unix/gccollect.c` (also used in Windows port):
+
+    gc_collect(): void {
+        gc_collect_start()
+        val regs = gc_helper_get_regs() // this step requires hardware support!
+        val regs_ptr: (void**)&regs // a pointer
+        gc_collect_root(regs_ptr, (stack_top - &regs) / int_size)
+        gc_collect_end()
+    }
+        
+Based on these observations, I hereby conclude:
+
+* `gc_collect()` has 3 steps: `gc_collect_start()`, `gc_collect_root(stack_boundary, stack_size)`, and `gc_collect_end()`
+
+* Root pointers may not only stay in the stack, but also in registers, so registers should be copied to the stack
+
+
+
 
