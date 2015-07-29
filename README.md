@@ -86,6 +86,51 @@ Based on these observations, I hereby conclude:
 
 * Root pointers may not only stay in the stack, but also in registers, so registers should be copied to the stack
 
+### How to add a module
+1. Create a file `unix/modawesome.c`.
 
+```C
+    // unix/modawesome.c
+    // This is the file for my awesome module in MicroPython.
+    
+    #include "py/runtime.h"
+    
+    STATIC mp_obj_t mod_awesome_impressive(void) {
+    	return mp_obj_new_int(0);
+    }
+    STATIC MP_DEFINE_CONST_FUN_OBJ_0(mod_awesome_impressive_obj, mod_awesome_impressive);
+    
+    STATIC const mp_map_elem_t mp_module_awesome_globals_table[] = {
+    	{ MP_OBJ_NEW_QSTR(MP_QSTR___name__), MP_OBJ_NEW_QSTR(MP_QSTR_awesome) },
+    	{ MP_OBJ_NEW_QSTR(MP_QSTR_impressive), (mp_obj_t)&mod_awesome_impressive_obj },
+    };
+    
+    STATIC MP_DEFINE_CONST_DICT(mp_module_awesome_globals, mp_module_awesome_globals_table);
+    
+    const mp_obj_module_t mp_module_awesome = {
+    	.base = { &mp_type_module },
+    	.name = MP_QSTR_awesome,
+    	.globals = (mp_obj_dict_t*)&mp_module_awesome_globals,
+    };
+```
 
+2. Open file `unix/qstrdefsport.h`, and add the following 2 lines.
 
+```C
+    Q(awesome)
+    Q(impressive)
+```
+
+3. Open file `unix/mpconfigport.h`, and add the following line.
+
+```C
+    extern const struct _mp_obj_module_t mp_module_awesome;
+```
+
+4. Still in file `unix/mpconfigport.h`, modify `#define MICROPY_PORT_BUILTIN_MODULES` to include another line:
+
+```C
+    { MP_OBJ_NEW_QSTR(MP_QSTR_awesome), (mp_obj_t)&mp_module_awesome } \
+```
+
+5. Make and run.
