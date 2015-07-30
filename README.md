@@ -134,3 +134,6 @@ Based on these observations, I hereby conclude:
 ```
 
 5. Make and run.
+
+### DE0 Module
+This is a MicroPython module for Altera DE0-NANO-SOC board. See `de0/` for more detail.
