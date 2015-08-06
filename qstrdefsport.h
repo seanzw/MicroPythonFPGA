@@ -58,9 +58,9 @@ Q(time)
 Q(clock)
 Q(sleep)
 
-Q(de0)
-Q(helloworld)
-Q(led_fancy)
+#if MICROPY_PY_DE0
+#include "de0/de0_qstr.h"
+#endif
 
 Q(socket)
 Q(sockaddr_in)
