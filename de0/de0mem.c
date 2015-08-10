@@ -6,7 +6,9 @@
 // #include "unistd.h"			// close
 // #include "sys/mman.h"		// mmap
 #include <fcntl.h>
+#include <unistd.h>
 #include <sys/mman.h>
+#include <stdio.h>
 #include "py/runtime.h"		// micropython api
 
 // #include "hwlib.h"
@@ -29,24 +31,35 @@ STATIC mp_obj_t mod_de0mem_mmap(mp_obj_t pa_in, mp_obj_t nbytes_in) {
 	if (MP_OBJ_IS_INT(pa_in)) {
 		pa = mp_obj_get_int(pa_in);
 	} else {
+		// printf("pa is not int");
 		return mp_obj_new_int(-1);
 	}
 	
 	if (MP_OBJ_IS_INT(nbytes_in)) {
 		nbytes = mp_obj_get_int(nbytes_in);
 	} else {
-		return mp_obj_new_int(-1);
+		// printf("nbytes is not int");
+		return mp_obj_new_int(-2);
 	}
 	
 	// Open the memory as a file
-	if ((fd = open("/dev/mem", O_RDWR | O_SYNC)) == -1) {
-		return mp_obj_new_int(-1);
+	if ((fd = open("/dev/mem", O_RDWR | O_SYNC)) < 0) {
+		// printf("Cannot open file");
+		return mp_obj_new_int(-3);
 	}
 	
 	// Call mmap
-	va = mmap(NULL, nbytes, PROT_READ | PROT_WRITE, MAP_SHARED, fd, pa);
+	if ((va = (mp_int_t)mmap(NULL, nbytes, PROT_READ | PROT_WRITE, MAP_SHARED, fd, pa)) == -1) {
+		// printf("Cannot mmap");
+		return mp_obj_new_int(-4);
+	}
 	
-	return mp_obj_new_int(0);
+	if (close(fd) < 0) {
+		// printf("Cannot close");
+		return mp_obj_new_int(-5);
+	}
+	
+	return mp_obj_new_int(va);
 }
 
 STATIC MP_DEFINE_CONST_FUN_OBJ_2(mod_de0mem_mmap_obj, mod_de0mem_mmap);
