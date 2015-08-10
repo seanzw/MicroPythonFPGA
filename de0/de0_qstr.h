@@ -1,5 +1,2 @@
 Q(de0mem)
-Q(init)
-Q(close)
-Q(get_base)
-Q(write_word)
+Q(mmap)
