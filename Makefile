@@ -1,5 +1,5 @@
-CROSS_COMPILE = arm-linux-gnueabihf-
-# CROSS_COMPILE = 
+# CROSS_COMPILE = arm-linux-gnueabihf-
+CROSS_COMPILE = 
 
 include ../py/mkenv.mk
 -include mpconfigport.mk

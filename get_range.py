@@ -96,7 +96,7 @@ lines = input_str.split('\n')
 
 lines = [line.split() for line in lines]
 
-lines = [(int(first, 16), int(last, 16), name) for (first, useless, last, name) in lines]
+lines = [(int(first, 16), int(last, 16), name) for (first, useless, last, name) in lines if name != 'Undefined']
 
 lines = [(first, last - first + 1, name) for (first, last, name) in lines]
 
