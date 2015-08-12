@@ -61,22 +61,16 @@ def __get_va__(pa):
         
         # if pa falls inside [pa_begin, pa_begin + pa_nbytes)
         if pa >= pa_begin and pa - pa_begin < pa_nbytes:
-            print("Physical address is in [%d, %d)" % (pa_begin, pa + pa_nbytes))
+            print("Physical address is in [0x%X, 0x%X)" % (pa_begin, pa + pa_nbytes))
             
             # if not mapped yet
             if va_begin == -1:
                 va_begin = de0mem_c.mmap(pa_begin, pa_nbytes)
-                
-                if va_begin < 0:
-                    print("mmap failed, err = %d" % va_begin)
-                    va_begin = -1
-                    return -1
-                    
                 __ranges__[idx] = (pa_begin, pa_nbytes, va_begin)
             
             return va_begin + (pa - pa_begin)
             
-    return -1
+    raise RuntimeError("Physical address 0x%X is invalid" % pa)
     
 # write
 def write_int8_to_pa(pa, val):

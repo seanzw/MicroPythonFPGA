@@ -6,6 +6,7 @@
 #include <unistd.h>
 #include <sys/mman.h>
 #include <stdio.h>
+#include <errno.h>
 #include "py/runtime.h"        // micropython api
 
 // ===============================
@@ -22,32 +23,32 @@ STATIC mp_obj_t mod_de0mem_c_mmap(mp_obj_t pa_in, mp_obj_t nbytes_in) {
     if (MP_OBJ_IS_INT(pa_in)) {
         pa = mp_obj_get_int_truncated(pa_in);
     } else {
-        // printf("pa is not int");
+        nlr_raise(mp_obj_new_exception_msg(&mp_type_TypeError, "physical address should be an int"));
         return mp_obj_new_int(-1);
     }
     
     if (MP_OBJ_IS_INT(nbytes_in)) {
         nbytes = mp_obj_get_int_truncated(nbytes_in);
     } else {
-        // printf("nbytes is not int");
-        return mp_obj_new_int(-2);
+        nlr_raise(mp_obj_new_exception_msg(&mp_type_TypeError, "number of bytes should be an int"));
+        return mp_obj_new_int(-1);
     }
     
     // Open the memory as a file
     if ((fd = open("/dev/mem", O_RDWR | O_SYNC)) < 0) {
-        // printf("Cannot open file");
-        return mp_obj_new_int(-3);
+        nlr_raise(mp_obj_new_exception_msg_varg(&mp_type_OSError, "Error opening \"/dev/mem\", errno = %d", mp_obj_new_int(errno)));
+        return mp_obj_new_int(-1);
     }
     
     // Call mmap
     if ((va = (mp_uint_t)mmap(NULL, nbytes, PROT_READ | PROT_WRITE, MAP_SHARED, fd, pa)) == -1) {
-        // printf("Cannot mmap");
-        return mp_obj_new_int(-4);
+        nlr_raise(mp_obj_new_exception_msg_varg(&mp_type_OSError, "Error calling mmap, errno = %d", mp_obj_new_int(errno)));
+        return mp_obj_new_int(-1);
     }
     
     if (close(fd) < 0) {
-        // printf("Cannot close");
-        return mp_obj_new_int(-5);
+        nlr_raise(mp_obj_new_exception_msg_varg(&mp_type_OSError, "Error calling fclose, errno = %d", mp_obj_new_int(errno)));
+        return mp_obj_new_int(-1);
     }
     
     return mp_obj_new_int_from_uint(va);
@@ -57,28 +58,30 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_2(mod_de0mem_c_mmap_obj, mod_de0mem_c_mmap);
 
 
 // Write various types of integers to virtual address
-#define CREATE_WRITE_FUNC(T)                                                                 \
-    STATIC mp_obj_t mod_de0mem_c_write_ ## T ## _to_va(mp_obj_t va_in, mp_obj_t val_in) {    \
-        mp_uint_t va;                                                                        \
-        mp_int_t val;                                                                        \
-                                                                                             \
-        if (MP_OBJ_IS_INT(va_in)) {                                                          \
-            va = mp_obj_get_int_truncated(va_in);                                            \
-        } else {                                                                             \
-            return mp_obj_new_int(-1);                                                       \
-        }                                                                                    \
-                                                                                             \
-        if (MP_OBJ_IS_INT(val_in)) {                                                         \
-            val = mp_obj_get_int_truncated(val_in);                                          \
-        } else {                                                                             \
-            return mp_obj_new_int(-1);                                                       \
-        }                                                                                    \
-                                                                                             \
-        *(T ## _t *)va = (T ## _t)val;                                                       \
-                                                                                             \
-        return mp_obj_new_int(0);                                                            \
-    }                                                                                        \
-                                                                                             \
+#define CREATE_WRITE_FUNC(T)                                                                                \
+    STATIC mp_obj_t mod_de0mem_c_write_ ## T ## _to_va(mp_obj_t va_in, mp_obj_t val_in) {                   \
+        mp_uint_t va;                                                                                       \
+        mp_int_t val;                                                                                       \
+                                                                                                            \
+        if (MP_OBJ_IS_INT(va_in)) {                                                                         \
+            va = mp_obj_get_int_truncated(va_in);                                                           \
+            nlr_raise(mp_obj_new_exception_msg(&mp_type_TypeError, "virtual address should be an int"));    \
+        } else {                                                                                            \
+            return mp_obj_new_int(-1);                                                                      \
+        }                                                                                                   \
+                                                                                                            \
+        if (MP_OBJ_IS_INT(val_in)) {                                                                        \
+            val = mp_obj_get_int_truncated(val_in);                                                         \
+            nlr_raise(mp_obj_new_exception_msg(&mp_type_TypeError, "value should be an int"));              \
+        } else {                                                                                            \
+            return mp_obj_new_int(-1);                                                                      \
+        }                                                                                                   \
+                                                                                                            \
+        *(T ## _t *)va = (T ## _t)val;                                                                      \
+                                                                                                            \
+        return mp_obj_new_int(0);                                                                           \
+    }                                                                                                       \
+                                                                                                            \
     STATIC MP_DEFINE_CONST_FUN_OBJ_2(mod_de0mem_c_write_ ## T ## _to_va_obj, mod_de0mem_c_write_ ## T ## _to_va);
 
 CREATE_WRITE_FUNC(int8)
@@ -89,46 +92,47 @@ CREATE_WRITE_FUNC(int32)
 CREATE_WRITE_FUNC(uint32)
 
 // Read various types of integers from virtual address
-
 #define CREATE_READ_SIGNED_FUNC(T) \
-    STATIC mp_obj_t mod_de0mem_c_read_ ## T ## _from_va(mp_obj_t va_in) {                    \
-        mp_uint_t va;                                                                        \
-        mp_int_t val;                                                                        \
-                                                                                             \
-        if (MP_OBJ_IS_INT(va_in)) {                                                          \
-            va = mp_obj_get_int_truncated(va_in);                                            \
-        } else {                                                                             \
-            return mp_obj_new_int(-1);                                                       \
-        }                                                                                    \
-                                                                                             \
-        val = *(T ## _t *)va;                                                                \
-                                                                                             \
-        return mp_obj_new_int(val);                                                          \
-    }                                                                                        \
-                                                                                             \
+    STATIC mp_obj_t mod_de0mem_c_read_ ## T ## _from_va(mp_obj_t va_in) {                                   \
+        mp_uint_t va;                                                                                       \
+        mp_int_t val;                                                                                       \
+                                                                                                            \
+        if (MP_OBJ_IS_INT(va_in)) {                                                                         \
+            va = mp_obj_get_int_truncated(va_in);                                                           \
+            nlr_raise(mp_obj_new_exception_msg(&mp_type_TypeError, "virtual address should be an int"));    \
+        } else {                                                                                            \
+            return mp_obj_new_int(-1);                                                                      \
+        }                                                                                                   \
+                                                                                                            \
+        val = *(T ## _t *)va;                                                                               \
+                                                                                                            \
+        return mp_obj_new_int(val);                                                                         \
+    }                                                                                                       \
+                                                                                                            \
     STATIC MP_DEFINE_CONST_FUN_OBJ_1(mod_de0mem_c_read_ ## T ## _from_va_obj, mod_de0mem_c_read_ ## T ## _from_va);
 
 CREATE_READ_SIGNED_FUNC(int8)
 CREATE_READ_SIGNED_FUNC(int16)
 CREATE_READ_SIGNED_FUNC(int32)
 
-// Read various types of integers from virtual address
+// Read various types of unsigned integers from virtual address
 #define CREATE_READ_UNSIGNED_FUNC(T) \
-    STATIC mp_obj_t mod_de0mem_c_read_ ## T ## _from_va(mp_obj_t va_in) {                    \
-        mp_uint_t va;                                                                        \
-        mp_uint_t val;                                                                       \
-                                                                                             \
-        if (MP_OBJ_IS_INT(va_in)) {                                                          \
-            va = mp_obj_get_int_truncated(va_in);                                            \
-        } else {                                                                             \
-            return mp_obj_new_int(-1);                                                       \
-        }                                                                                    \
-                                                                                             \
-        val = *(T ## _t *)va;                                                                \
-                                                                                             \
-        return mp_obj_new_int_from_uint(val);                                                \
-    }                                                                                        \
-                                                                                             \
+    STATIC mp_obj_t mod_de0mem_c_read_ ## T ## _from_va(mp_obj_t va_in) {                                   \
+        mp_uint_t va;                                                                                       \
+        mp_uint_t val;                                                                                      \
+                                                                                                            \
+        if (MP_OBJ_IS_INT(va_in)) {                                                                         \
+            va = mp_obj_get_int_truncated(va_in);                                                           \
+            nlr_raise(mp_obj_new_exception_msg(&mp_type_TypeError, "virtual address should be an int"));    \
+        } else {                                                                                            \
+            return mp_obj_new_int(-1);                                                                      \
+        }                                                                                                   \
+                                                                                                            \
+        val = *(T ## _t *)va;                                                                               \
+                                                                                                            \
+        return mp_obj_new_int_from_uint(val);                                                               \
+    }                                                                                                       \
+                                                                                                            \
     STATIC MP_DEFINE_CONST_FUN_OBJ_1(mod_de0mem_c_read_ ## T ## _from_va_obj, mod_de0mem_c_read_ ## T ## _from_va);
 
 CREATE_READ_UNSIGNED_FUNC(uint8)
