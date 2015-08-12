@@ -1,7 +1,9 @@
 # Led python module based on de0mem
 from de0.de0mem_py import *
+from de0.hps_0 import *
 
-LED_PIO_BASE = 0x10040 + 0xFF200000;
+# LED_PIO_BASE = 0x10040 + 0xFF200000
+LED_PIO_BASE = 0xFF200000 + LED_PIO.BASE
 
 class led(object):
 	"""led class"""
