@@ -1,4 +1,5 @@
 # Led python module based on de0mem
+from de0.de0mem_py import *
 
 LED_PIO_BASE = 0x10040 + 0xFF200000;
 
@@ -29,5 +30,3 @@ class led(object):
 			self.off()
 		else:
 			self.on()
-
-
