@@ -1,0 +1,112 @@
+class ONCHIP_MEMORY2_0:
+    COMPONENT_TYPE = "altera_avalon_onchip_memory2"
+    COMPONENT_NAME = "onchip_memory2_0"
+    BASE = 0x0
+    SPAN = 65536
+    END = 0xffff
+    ALLOW_IN_SYSTEM_MEMORY_CONTENT_EDITOR = 0
+    ALLOW_MRAM_SIM_CONTENTS_ONLY_FILE = 0
+    CONTENTS_INFO = ""
+    DUAL_PORT = 0
+    GUI_RAM_BLOCK_TYPE = "AUTO"
+    INIT_CONTENTS_FILE = "soc_system_onchip_memory2_0"
+    INIT_MEM_CONTENT = 1
+    INSTANCE_ID = "NONE"
+    NON_DEFAULT_INIT_FILE_ENABLED = 0
+    RAM_BLOCK_TYPE = "AUTO"
+    READ_DURING_WRITE_MODE = "DONT_CARE"
+    SINGLE_CLOCK_OP = 0
+    SIZE_MULTIPLE = 1
+    SIZE_VALUE = 65536
+    WRITABLE = 1
+    MEMORY_INFO_DAT_SYM_INSTALL_DIR = "SIM_DIR"
+    MEMORY_INFO_GENERATE_DAT_SYM = 1
+    MEMORY_INFO_GENERATE_HEX = 1
+    MEMORY_INFO_HAS_BYTE_LANE = 0
+    MEMORY_INFO_HEX_INSTALL_DIR = "QPF_DIR"
+    MEMORY_INFO_MEM_INIT_DATA_WIDTH = 64
+    MEMORY_INFO_MEM_INIT_FILENAME = "soc_system_onchip_memory2_0"
+
+class SYSID_QSYS:
+    COMPONENT_TYPE = "altera_avalon_sysid_qsys"
+    COMPONENT_NAME = "sysid_qsys"
+    BASE = 0x10000
+    SPAN = 8
+    END = 0x10007
+    ID = 2899645186
+    TIMESTAMP = 1420572267
+
+class LED_PIO:
+    COMPONENT_TYPE = "altera_avalon_pio"
+    COMPONENT_NAME = "led_pio"
+    BASE = 0x10040
+    SPAN = 32
+    END = 0x1005f
+    BIT_CLEARING_EDGE_REGISTER = 0
+    BIT_MODIFYING_OUTPUT_REGISTER = 0
+    CAPTURE = 0
+    DATA_WIDTH = 4
+    DO_TEST_BENCH_WIRING = 0
+    DRIVEN_SIM_VALUE = 0
+    EDGE_TYPE = "NONE"
+    FREQ = 50000000
+    HAS_IN = 0
+    HAS_OUT = 1
+    HAS_TRI = 0
+    IRQ_TYPE = "NONE"
+    RESET_VALUE = 0
+
+class DIPSW_PIO:
+    COMPONENT_TYPE = "altera_avalon_pio"
+    COMPONENT_NAME = "dipsw_pio"
+    BASE = 0x10080
+    SPAN = 32
+    END = 0x1009f
+    IRQ = 0
+    BIT_CLEARING_EDGE_REGISTER = 1
+    BIT_MODIFYING_OUTPUT_REGISTER = 0
+    CAPTURE = 1
+    DATA_WIDTH = 4
+    DO_TEST_BENCH_WIRING = 0
+    DRIVEN_SIM_VALUE = 0
+    EDGE_TYPE = "ANY"
+    FREQ = 50000000
+    HAS_IN = 1
+    HAS_OUT = 0
+    HAS_TRI = 0
+    IRQ_TYPE = "EDGE"
+    RESET_VALUE = 0
+
+class BUTTON_PIO:
+    COMPONENT_TYPE = "altera_avalon_pio"
+    COMPONENT_NAME = "button_pio"
+    BASE = 0x100c0
+    SPAN = 32
+    END = 0x100df
+    IRQ = 1
+    BIT_CLEARING_EDGE_REGISTER = 1
+    BIT_MODIFYING_OUTPUT_REGISTER = 0
+    CAPTURE = 1
+    DATA_WIDTH = 4
+    DO_TEST_BENCH_WIRING = 0
+    DRIVEN_SIM_VALUE = 0
+    EDGE_TYPE = "FALLING"
+    FREQ = 50000000
+    HAS_IN = 1
+    HAS_OUT = 0
+    HAS_TRI = 0
+    IRQ_TYPE = "EDGE"
+    RESET_VALUE = 0
+
+class JTAG_UART:
+    COMPONENT_TYPE = "altera_avalon_jtag_uart"
+    COMPONENT_NAME = "jtag_uart"
+    BASE = 0x20000
+    SPAN = 16
+    END = 0x2000f
+    IRQ = 2
+    READ_DEPTH = 64
+    READ_THRESHOLD = 8
+    WRITE_DEPTH = 64
+    WRITE_THRESHOLD = 8
+
