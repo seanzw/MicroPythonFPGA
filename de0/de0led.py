@@ -5,7 +5,7 @@ from de0.hps_0 import *
 # LED_PIO_BASE = 0x10040 + 0xFF200000
 LED_PIO_BASE = 0xFF200000 + LED_PIO.BASE
 
-class led(object):
+class LED(object):
 	"""led class"""
 	def __init__(self, idx):
 		super(led, self).__init__()
