@@ -81,6 +81,7 @@ STATIC mp_obj_t mod_de0adxl345_c_reg_multi_read(mp_obj_t file_in, mp_obj_t addre
 STATIC MP_DEFINE_CONST_FUN_OBJ_3(mod_de0adxl345_c_reg_multi_read_obj, mod_de0adxl345_c_reg_multi_read);
 
 STATIC mp_obj_t mod_de0adxl345_c_init(void) {
+
     int file;
     const char *filename = "/dev/i2c-0";
 
@@ -93,7 +94,7 @@ STATIC mp_obj_t mod_de0adxl345_c_init(void) {
         nlr_raise(mp_obj_new_exception_msg(&mp_type_RuntimeError, "init didn't succeed in aquire bus"));
     }
 
-    return mp_const_none;
+    return mp_obj_new_int(file);
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_0(mod_de0adxl345_c_init_obj, mod_de0adxl345_c_init);
 
