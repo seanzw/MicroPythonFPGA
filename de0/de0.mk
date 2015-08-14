@@ -6,3 +6,4 @@
 CFLAGS_MOD += -DMICROPY_PY_DE0=1
 
 SRC_MOD += de0/de0mem_c.c
+SRC_MOD += de0/de0adxl345_c.c
