@@ -2,7 +2,7 @@
 from de0.de0mem_py import *
 import de0.hps_0 as hps_0
 
-class led(object):
+class LED(object):
 	"""led class"""
 	
 	def __init__(self, idx):
