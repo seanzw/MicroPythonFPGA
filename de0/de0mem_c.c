@@ -65,15 +65,15 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_2(mod_de0mem_c_mmap_obj, mod_de0mem_c_mmap);
                                                                                                             \
         if (MP_OBJ_IS_INT(va_in)) {                                                                         \
             va = mp_obj_get_int_truncated(va_in);                                                           \
-            nlr_raise(mp_obj_new_exception_msg(&mp_type_TypeError, "virtual address should be an int"));    \
         } else {                                                                                            \
+            nlr_raise(mp_obj_new_exception_msg(&mp_type_TypeError, "virtual address should be an int"));    \
             return mp_obj_new_int(-1);                                                                      \
         }                                                                                                   \
                                                                                                             \
         if (MP_OBJ_IS_INT(val_in)) {                                                                        \
             val = mp_obj_get_int_truncated(val_in);                                                         \
-            nlr_raise(mp_obj_new_exception_msg(&mp_type_TypeError, "value should be an int"));              \
         } else {                                                                                            \
+            nlr_raise(mp_obj_new_exception_msg(&mp_type_TypeError, "value should be an int"));              \
             return mp_obj_new_int(-1);                                                                      \
         }                                                                                                   \
                                                                                                             \
@@ -99,8 +99,8 @@ CREATE_WRITE_FUNC(uint32)
                                                                                                             \
         if (MP_OBJ_IS_INT(va_in)) {                                                                         \
             va = mp_obj_get_int_truncated(va_in);                                                           \
-            nlr_raise(mp_obj_new_exception_msg(&mp_type_TypeError, "virtual address should be an int"));    \
         } else {                                                                                            \
+            nlr_raise(mp_obj_new_exception_msg(&mp_type_TypeError, "virtual address should be an int"));    \
             return mp_obj_new_int(-1);                                                                      \
         }                                                                                                   \
                                                                                                             \
@@ -123,8 +123,8 @@ CREATE_READ_SIGNED_FUNC(int32)
                                                                                                             \
         if (MP_OBJ_IS_INT(va_in)) {                                                                         \
             va = mp_obj_get_int_truncated(va_in);                                                           \
-            nlr_raise(mp_obj_new_exception_msg(&mp_type_TypeError, "virtual address should be an int"));    \
         } else {                                                                                            \
+            nlr_raise(mp_obj_new_exception_msg(&mp_type_TypeError, "virtual address should be an int"));    \
             return mp_obj_new_int(-1);                                                                      \
         }                                                                                                   \
                                                                                                             \
