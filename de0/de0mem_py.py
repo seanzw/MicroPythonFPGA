@@ -1,4 +1,4 @@
-import de0mem_c
+import de0mem_c as __de0mem_c__
 
 # (pa_begin, pa_nbytes, va_begin)
 __ranges__ = [
@@ -65,7 +65,7 @@ def __get_va__(pa):
             
             # if not mapped yet
             if va_begin == -1:
-                va_begin = de0mem_c.mmap(pa_begin, pa_nbytes)
+                va_begin = __de0mem_c__.mmap(pa_begin, pa_nbytes)
                 __ranges__[idx] = (pa_begin, pa_nbytes, va_begin)
             
             return va_begin + (pa - pa_begin)
@@ -75,52 +75,50 @@ def __get_va__(pa):
 # write
 def write_int8_to_pa(pa, val):
     va = __get_va__(pa)
-    de0mem_c.write_int8_to_va(va, val)
+    __de0mem_c__.write_int8_to_va(va, val)
 
 def write_int16_to_pa(pa, val):
     va = __get_va__(pa)
-    de0mem_c.write_int16_to_va(va, val)
+    __de0mem_c__.write_int16_to_va(va, val)
 
 def write_int32_to_pa(pa, val):
     va = __get_va__(pa)
-    de0mem_c.write_int32_to_va(va, val)
+    __de0mem_c__.write_int32_to_va(va, val)
     
 def write_uint8_to_pa(pa, val):
     va = __get_va__(pa)
-    de0mem_c.write_uint8_to_va(va, val)
+    __de0mem_c__.write_uint8_to_va(va, val)
     
 def write_uint16_to_pa(pa, val):
     va = __get_va__(pa)
-    de0mem_c.write_uint16_to_va(va, val)
+    __de0mem_c__.write_uint16_to_va(va, val)
     
 def write_uint32_to_pa(pa, val):
     va = __get_va__(pa)
-    de0mem_c.write_uint32_to_va(va, val)
+    __de0mem_c__.write_uint32_to_va(va, val)
     
 # read
 def read_int8_from_pa(pa):
     va = __get_va__(pa)
-    return de0mem_c.read_int8_from_va(va)
+    return __de0mem_c__.read_int8_from_va(va)
     
 def read_uint8_from_pa(pa):
     va = __get_va__(pa)
-    return de0mem_c.read_uint8_from_va(va)
+    return __de0mem_c__.read_uint8_from_va(va)
     
 def read_int16_from_pa(pa):
     va = __get_va__(pa)
-    return de0mem_c.read_int16_from_va(va)
+    return __de0mem_c__.read_int16_from_va(va)
     
 def read_uint16_from_pa(pa):
     va = __get_va__(pa)
-    return de0mem_c.read_uint16_from_va(va)
+    return __de0mem_c__.read_uint16_from_va(va)
     
 def read_int32_from_pa(pa):
     va = __get_va__(pa)
-    return de0mem_c.read_int32_from_va(va)
+    return __de0mem_c__.read_int32_from_va(va)
     
 def read_uint32_from_pa(pa):
     va = __get_va__(pa)
-    return de0mem_c.read_uint32_from_va(va)
+    return __de0mem_c__.read_uint32_from_va(va)
     
-def what():
-    print("what")
