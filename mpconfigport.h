@@ -118,7 +118,8 @@ extern const struct _mp_obj_module_t mp_module_time;
 extern const struct _mp_obj_module_t mp_module_termios;
 extern const struct _mp_obj_module_t mp_module_socket;
 extern const struct _mp_obj_module_t mp_module_ffi;
-extern const struct _mp_obj_module_t mp_module_de0mem;
+extern const struct _mp_obj_module_t mp_module_de0mem_c;
+extern const struct _mp_obj_module_t mp_module_de0adxl345_c;
 
 #if MICROPY_PY_FFI
 #define MICROPY_PY_FFI_DEF { MP_OBJ_NEW_QSTR(MP_QSTR_ffi), (mp_obj_t)&mp_module_ffi },
@@ -141,13 +142,15 @@ extern const struct _mp_obj_module_t mp_module_de0mem;
 #define MICROPY_PY_SOCKET_DEF
 #endif
 #if MICROPY_PY_DE0
-#define MICROPY_PY_DE0MEM_DEF { MP_OBJ_NEW_QSTR(MP_QSTR_de0mem), (mp_obj_t)&mp_module_de0mem },
+#define MICROPY_PY_DE0MEM_DEF { MP_OBJ_NEW_QSTR(MP_QSTR_de0mem_c), (mp_obj_t)&mp_module_de0mem_c },
+#define MICROPY_PY_DE0ADXL345_DEF { MP_OBJ_NEW_QSTR(MP_QSTR_de0adxl345_c), (mp_obj_t)&mp_module_de0adxl345_c },
 #else
 #define MICROPY_PY_DE0MEM_DEF
 #endif
 
 #define MICROPY_PORT_BUILTIN_MODULES \
     MICROPY_PY_DE0MEM_DEF \
+    MICROPY_PY_DE0ADXL345_DEF \
     MICROPY_PY_FFI_DEF \
     MICROPY_PY_TIME_DEF \
     MICROPY_PY_SOCKET_DEF \
