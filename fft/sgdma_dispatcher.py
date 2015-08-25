@@ -1,3 +1,5 @@
+from de0.de0mem_py import *
+
 #######################################################
 ## The following definitions are pulled from csr_regs.h
 #######################################################
@@ -233,7 +235,7 @@ class StandardDescriptor:
         self.control = control
         
     def write(self, csr_base, descriptor_base):
-        if ((RD_CSR_STATUS(csr_base) & CSR_DESCRIPTOR_BUFFER_FULL_MASK) != 0)
+        if ((RD_CSR_STATUS(csr_base) & CSR_DESCRIPTOR_BUFFER_FULL_MASK) != 0):
             return -ENOSPC # at least one descriptor buffer is full, returning so that this function is non-blocking
   
         WR_DESCRIPTOR_READ_ADDRESS(descriptor_base, self.read_address);
@@ -241,7 +243,6 @@ class StandardDescriptor:
         WR_DESCRIPTOR_LENGTH(descriptor_base, self.transfer_length);
         WR_DESCRIPTOR_CONTROL_STANDARD(descriptor_base, self.control);
         return 0
-}
 
 def construct_standard_st_to_mm_descriptor(write_address, length, control):
     return StandardDescriptor(0, write_address, length, control | DESCRIPTOR_CONTROL_GO_MASK)

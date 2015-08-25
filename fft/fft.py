@@ -2,8 +2,10 @@ import hps_0 as HPS_0
 from sgdma_dispatcher import *
 from de0.de0mem_py import *
 
+data_length = 128
+
 ALT_LWFPGASLVS_OFST = 0xFF200000
-mmapedBase = ALT_LWFPGASLVS_OFST
+mappedBase = ALT_LWFPGASLVS_OFST
 
 DATA_BASE = HPS_0.FFT_SUB_DATA.BASE + mappedBase
 for i in range(0, data_length):
@@ -14,7 +16,7 @@ for i in range(0, data_length):
 RESULT_BASE = HPS_0.FFT_SUB_DATA.BASE + mappedBase + HPS_0.FFT_SUB_DATA.SPAN // 2
 for i in range(0, data_length * 2):
 	write_uint32_to_pa(RESULT_BASE + i * 4, 0) # zero out result
-	
+
 # tell the FFT how long the fft is
 FFT_CSR_BASE = mappedBase + HPS_0.FFT_SUB_FFT_STADAPTER_0.BASE
 write_uint32_to_pa(FFT_CSR_BASE, data_length)

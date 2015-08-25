@@ -61,7 +61,7 @@ def __get_va__(pa):
         
         # if pa falls inside [pa_begin, pa_begin + pa_nbytes)
         if pa >= pa_begin and pa - pa_begin < pa_nbytes:
-            print("Physical address is in [0x%X, 0x%X)" % (pa_begin, pa + pa_nbytes))
+            # print("Physical address is in [0x%X, 0x%X)" % (pa_begin, pa + pa_nbytes))
             
             # if not mapped yet
             if va_begin == -1:
