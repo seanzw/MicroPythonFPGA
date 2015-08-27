@@ -122,6 +122,8 @@ Micro Python 35b48ff on 2015-08-27; linux version
 then congratulations! You are running MicroPython!
 
 ## Example 1: GSensor
+> This example is derived from the GSensor example in "System CD".
+
 Now let's do some demonstrations. This port of MicroPython adds some features for the DE0 board. We hope that through these demos, you can see that using Python makes developing a lot easier.
 
 Our first example is the GSensor. This example mimics the demonstration offered in the "System CD", but it is written in MicroPython instead of C.
@@ -147,7 +149,129 @@ Gx = 8 mg, Gy = -76 mg, Gz = 900 mg
 ```
 
 ## Example 2: HPS LED
-The last example only shows that we can read from peripherals. In this example, we can actually control one. 
+
+> This example is derived from the GPIO example in "System CD".
+
+The last example only shows that we can read from peripherals. In this example, we can actually control one.
+
+The HPS part of the board offers an LED that you can control without FPGA cooperation.
+
+Inside the MicroPython prompt, type:
+
+```
+import de0
+l = de0.HPS_LED()
+l.status()
+```
+
+You should see `False`.
+
+```
+l.toggle()
+```
+
+You will find that an LED on the board is on.
+
+`de0.HPS_LED` is a class which contains the following methods:
+
+```
+# Check whether the LED is currently on
+status(): bool
+
+# Switch on the LED. If it's already on, keep it on.
+on()
+
+# Switch off the LED. If it's already off, keep it off.
+off()
+
+# Switch the status of the LED.
+toggle()
+```
+
+## Example 3: FPGA LED
+
+> This example is derived from the FPGA LED example in "System CD".
+
+Our next example is more complicated. We're going to communicate with the FPGA part of the board.
+
+There are several ways to configure the FPGA.
+
+### Configure FPGA in the booting process
+If you are using the SD card image mentioned before, then inside the SD card root directory, you can find a file `de0_nano_soc.rbf`. The booting process is configured to automatically read this file and burn it into the FPGA. Needless to say, if we replace this file by our own image, we can load our FPGA image. Note that the image file **must** be an `.rbf` file. Copy `/led/HPS_CONTROL_FPGA_LED.rbf` to the root directory of the SD card, and rename it to `de0_nano_soc.rbf `.
+
+If you are not using this SD card image, you can still configure the FPGA in the booting process. Refer to [this link](http://rocketboards.org/foswiki/view/Documentation/GSRD131ProgrammingFPGA) for how to do it.
+
+### Configure FPGA by burning an image file inside Linux
+After booting into Linux on the board, you can use the `dd` command to load an image file. To do it in this way, you need to make sure that after booting, the FPGA is still in a `configuration phase`. If you deleted the `de0_nano_soc.rbf` file in the root directory, the booting process would not be able to configure the FPGA, leaving it in a `configuration phase`.
+
+After booting into Linux, type the following command:
+
+```
+dd if=your_image_file.rbf of=/dev/fpga0 bs=1M
+```
+
+If you see something like this:
+
+```
+4+1 records in
+4+1 records out
+```
+
+then you're done!
+
+### Configure FPGA by using Quartus through your computer
+Power on the board. This time, connect not only the UART, but also "USB Blaster II" to your computer. We need to configure the FPGA through this.
+
+Refer to the "Getting Started Guide" inside the "System CD" and follow the instructions in the chapter "Performing a FPGA System Test". The image file you need is `/led/HPS_CONTROL_FPGA_LED.sof`.
+
+Note that to configure the FPGA in this way, you need to make sure:
+
+* Start burning the image **after** booting. Each time the board boots, it loses the FPGA configuration.
+* The image file is a `.sof` file instead of a `.rbf` file.
+
+### Tesing the FPGA LED
+After configuring the FPGA, a connection between HPS and FPGA is established. Now run MicroPython, and inside the prompt, type:
+
+```
+import led.test
+```
+
+You can see that several LEDs on the board are switching on and off in a certain fashion.
+
+### Control the FPGA LED
+You can control the FPGA LEDs just in the same fashion as controlling the HPS LED.
+
+```
+from led import *
+l = de0led.LED(0)
+l.toggle()
+```
+
+Note that there are 8 FPGA LEDs, so that you need to put an index parameter to get an LED instance.
+
+## Example 4: FFT
+
+> This example is derived from the FFT example on [rocketboard](http://rocketboards.org/foswiki/view/Documentation/WS1IntroToAlteraSoCDevices).
+
+Our last example is a pretty decent application: FFT. It is also a joint work of HPS and FPGA.
+
+To configure the FPGA, use the same method given in example 3. The image file you need is `/fft/fft.rbf` or `/fft/fft.sof`.
+
+Inside the MicroPython prompt, you can run the FFT application by:
+
+```
+import fft.fft
+```
+
+You would get something like this:
+
+```
+fft = 7b 0 0
+fft = 7c 4095 41581
+fft = 7d 0 0
+fft = 7e 0 0
+fft = 7f 0 0
+```
 
 ## RocketBoards Tutorials
 http://rocketboards.org/foswiki/view/Documentation/WS1IntroToAlteraSoCDevices
