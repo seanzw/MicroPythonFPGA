@@ -24,7 +24,7 @@ You **must** compile this port inside Linux, for some Linux-specific feature is 
 First, clone the [official MicroPython GitHub repository](https://github.com/micropython/micropython) to your computer. You can do so by typing the following command:
 
 ```
-git clone https://github.com/micropython/micropython
+git clone --recursive https://github.com/micropython/micropython
 ```
 
 Get into the `micropython` directory:
