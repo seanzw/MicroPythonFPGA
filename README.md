@@ -33,10 +33,20 @@ Get into the `micropython` directory:
 cd micropython
 ```
 
-You can see a lot of folders, many of which are different ports. The build process for each port is as follows:
+You can see a lot of directories, many of which are different ports. The build process for each port is as follows:
 
-* Go to the directory of a port, e.g. /unix
-* Run `make` in that directory.
+* Go to the directory of a port. For example, if we want to build the `unix` port:
+
+    ```
+    cd unix
+    ```
+    
+* Type commands:
+
+    ```
+    make axtls
+    make
+    ```
 
 You might want to try this process by compiling the `unix` port. The `unix` port doesn't require a cross compiler, and it runs on a normal x86 PC.
 
@@ -74,12 +84,12 @@ MicroPython uses `libffi`, so you also need to install this package. However, yo
 wget ftp://sourceware.org/pub/libffi/libffi-3.0.13.tar.gz
 tar -xzf libffi-3.0.13.tar.gz
 cd libffi-3.0.13/
-./configure --host=arm-linux-gnueabihf --prefix=/usr/arm-linux-gnueabi hf
+./configure --host=arm-linux-gnueabihf --prefix=/usr/arm-linux-gnueabihf
 make
 sudo make install
 ```
 
-After installing the cross compiler and `libffi`, you can now run `make` inside `MicroPythonFPGA`.
+After installing the cross compiler and `libffi`, you can now run `make axtls` and `make` inside `MicroPythonFPGA`.
 
 You will get an executable file `micropython` in the current directory. You cannot run it on your computer, since it's for the board.
 
@@ -305,3 +315,27 @@ de0.write_int32_to_pa(pa, value)
 ```
 
 to write a 32-bit integer `value` to physical address `pa`. The `de0` module maintains a mapping table behind the scene so that you don't have to worry about `mmap`.
+
+## How this port is constructed
+This port is derived from `unix`. The following files have been changed:
+
+```
+qstrdefsport.h
+mpconfigport.mk
+mpconfigport.h
+Makefile
+```
+
+Inside these files, modifications are highlighted.
+
+The following files have been added:
+
+```
+de0/*
+fft/*
+h2py/*
+led/*
+ranges.py
+modzerohello.c
+get_range.py
+```
