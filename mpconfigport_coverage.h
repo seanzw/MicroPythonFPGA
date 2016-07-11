@@ -1,9 +1,9 @@
 /*
- * This file is part of the Micro Python project, http://micropython.org/
+ * This file is part of the MicroPython project, http://micropython.org/
  *
  * The MIT License (MIT)
  *
- * Copyright (c) 2013, 2014 Damien P. George
+ * Copyright (c) 2013-2016 Damien P. George
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -24,8 +24,14 @@
  * THE SOFTWARE.
  */
 
-/***************** MicroPython FPGA *****************/
-#if MICROPY_PY_DE0
-#include "de0/de0_qstr.h"
-#endif
-/***************** MicroPython FPGA *****************/
+// Default unix config while intended to be comprehensive, may still not enable
+// all the features, this config should enable more (testable) options.
+
+#include <mpconfigport.h>
+
+#define MICROPY_PY_URANDOM_EXTRA_FUNCS (1)
+#define MICROPY_PY_IO_BUFFEREDWRITER (1)
+#undef MICROPY_FSUSERMOUNT
+#undef MICROPY_VFS_FAT
+#define MICROPY_FSUSERMOUNT            (1)
+#define MICROPY_VFS_FAT                (1)

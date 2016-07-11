@@ -1,9 +1,9 @@
 /*
- * This file is part of the Micro Python project, http://micropython.org/
+ * This file is part of the MicroPython project, http://micropython.org/
  *
  * The MIT License (MIT)
  *
- * Copyright (c) 2013, 2014 Damien P. George
+ * Copyright (c) 2015 Damien P. George
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -24,8 +24,21 @@
  * THE SOFTWARE.
  */
 
-/***************** MicroPython FPGA *****************/
-#if MICROPY_PY_DE0
-#include "de0/de0_qstr.h"
+// options to control how MicroPython is built
+
+#include <mpconfigport.h>
+
+#undef MICROPY_STREAMS_NON_BLOCK
+#define MICROPY_STREAMS_NON_BLOCK (0)
+
+#undef MICROPY_PY_SYS_PLATFORM
+#define MICROPY_PY_SYS_PLATFORM "freedos"
+
+// djgpp dirent struct does not have d_ino field
+#undef _DIRENT_HAVE_D_INO
+
+// djgpp errno.h have no ENOTSUP
+#include <errno.h>
+#ifndef ENOTSUP
+#define ENOTSUP 88
 #endif
-/***************** MicroPython FPGA *****************/

@@ -1,9 +1,9 @@
 /*
- * This file is part of the Micro Python project, http://micropython.org/
+ * This file is part of the MicroPython project, http://micropython.org/
  *
  * The MIT License (MIT)
  *
- * Copyright (c) 2013, 2014 Damien P. George
+ * Copyright (c) 2016 Damien P. George on behalf of Pycom Ltd
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -23,9 +23,14 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+#ifndef __MICROPY_INCLUDED_UNIX_MPTHREADPORT_H__
+#define __MICROPY_INCLUDED_UNIX_MPTHREADPORT_H__
 
-/***************** MicroPython FPGA *****************/
-#if MICROPY_PY_DE0
-#include "de0/de0_qstr.h"
-#endif
-/***************** MicroPython FPGA *****************/
+#include <pthread.h>
+
+typedef pthread_mutex_t mp_thread_mutex_t;
+
+void mp_thread_init(void);
+void mp_thread_gc_others(void);
+
+#endif // __MICROPY_INCLUDED_UNIX_MPTHREADPORT_H__

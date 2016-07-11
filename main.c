@@ -44,24 +44,27 @@
 #include "py/repl.h"
 #include "py/gc.h"
 #include "py/stackctrl.h"
+#include "py/mphal.h"
+#include "py/mpthread.h"
+#include "extmod/misc.h"
 #include "genhdr/mpversion.h"
-#include "unix_mphal.h"
 #include "input.h"
 
 // Command line options, with their defaults
 STATIC bool compile_only = false;
 STATIC uint emit_opt = MP_EMIT_OPT_NONE;
-mp_uint_t mp_verbose_flag = 0;
 
 #if MICROPY_ENABLE_GC
 // Heap size of GC heap (if enabled)
 // Make it larger on a 64 bit machine, because pointers are larger.
-long heap_size = 128*1024 * (sizeof(mp_uint_t) / 4);
+long heap_size = 1024*1024 * (sizeof(mp_uint_t) / 4);
 #endif
 
-STATIC void stderr_print_strn(void *env, const char *str, mp_uint_t len) {
+STATIC void stderr_print_strn(void *env, const char *str, size_t len) {
     (void)env;
-    fwrite(str, len, 1, stderr);
+    ssize_t dummy = write(STDERR_FILENO, str, len);
+    mp_uos_dupterm_tx_strn(str, len);
+    (void)dummy;
 }
 
 const mp_print_t mp_stderr_print = {NULL, stderr_print_strn};
@@ -70,11 +73,11 @@ const mp_print_t mp_stderr_print = {NULL, stderr_print_strn};
 // If exc is SystemExit, return value where FORCED_EXIT bit set,
 // and lower 8 bits are SystemExit value. For all other exceptions,
 // return 1.
-STATIC int handle_uncaught_exception(mp_obj_t exc) {
+STATIC int handle_uncaught_exception(mp_obj_base_t *exc) {
     // check for SystemExit
-    if (mp_obj_is_subclass_fast(mp_obj_get_type(exc), &mp_type_SystemExit)) {
+    if (mp_obj_is_subclass_fast(MP_OBJ_FROM_PTR(exc->type), MP_OBJ_FROM_PTR(&mp_type_SystemExit))) {
         // None is an exit value of 0; an int is its value; anything else is 1
-        mp_obj_t exit_val = mp_obj_exception_get_value(exc);
+        mp_obj_t exit_val = mp_obj_exception_get_value(MP_OBJ_FROM_PTR(exc));
         mp_int_t val = 0;
         if (exit_val != mp_const_none && !mp_obj_get_int_maybe(exit_val, &val)) {
             val = 1;
@@ -83,7 +86,7 @@ STATIC int handle_uncaught_exception(mp_obj_t exc) {
     }
 
     // Report all other exceptions
-    mp_obj_print_exception(&mp_stderr_print, exc);
+    mp_obj_print_exception(&mp_stderr_print, MP_OBJ_FROM_PTR(exc));
     return 1;
 }
 
@@ -108,19 +111,25 @@ STATIC int execute_from_lexer(mp_lexer_t *lex, mp_parse_input_kind_t input_kind,
         }
         #endif
 
-        mp_parse_node_t pn = mp_parse(lex, input_kind);
+        mp_parse_tree_t parse_tree = mp_parse(lex, input_kind);
 
         /*
         printf("----------------\n");
-        mp_parse_node_print(pn, 0);
+        mp_parse_node_print(parse_tree.root, 0);
         printf("----------------\n");
         */
 
-        mp_obj_t module_fun = mp_compile(pn, source_name, emit_opt, is_repl);
+        mp_obj_t module_fun = mp_compile(&parse_tree, source_name, emit_opt, is_repl);
 
         if (!compile_only) {
             // execute it
             mp_call_function_0(module_fun);
+            // check for pending exception
+            if (MP_STATE_VM(mp_pending_exception) != MP_OBJ_NULL) {
+                mp_obj_t obj = MP_STATE_VM(mp_pending_exception);
+                MP_STATE_VM(mp_pending_exception) = MP_OBJ_NULL;
+                nlr_raise(obj);
+            }
         }
 
         mp_hal_set_interrupt_char(-1);
@@ -130,10 +139,13 @@ STATIC int execute_from_lexer(mp_lexer_t *lex, mp_parse_input_kind_t input_kind,
     } else {
         // uncaught exception
         mp_hal_set_interrupt_char(-1);
-        return handle_uncaught_exception((mp_obj_t)nlr.ret_val);
+        return handle_uncaught_exception(nlr.ret_val);
     }
 }
 
+#if MICROPY_USE_READLINE == 1
+#include "lib/mp-readline/readline.h"
+#else
 STATIC char *strjoin(const char *s1, int sep_char, const char *s2) {
     int l1 = strlen(s1);
     int l2 = strlen(s2);
@@ -147,9 +159,94 @@ STATIC char *strjoin(const char *s1, int sep_char, const char *s2) {
     s[l1 + l2] = 0;
     return s;
 }
+#endif
 
 STATIC int do_repl(void) {
-    mp_hal_stdout_tx_str("Micro Python " MICROPY_GIT_TAG " on " MICROPY_BUILD_DATE "; " MICROPY_PY_SYS_PLATFORM " version\n");
+    mp_hal_stdout_tx_str("MicroPython " MICROPY_GIT_TAG " on " MICROPY_BUILD_DATE "; "
+        MICROPY_PY_SYS_PLATFORM " version\nUse Ctrl-D to exit, Ctrl-E for paste mode\n");
+
+    #if MICROPY_USE_READLINE == 1
+
+    // use MicroPython supplied readline
+
+    vstr_t line;
+    vstr_init(&line, 16);
+    for (;;) {
+        mp_hal_stdio_mode_raw();
+
+    input_restart:
+        vstr_reset(&line);
+        int ret = readline(&line, ">>> ");
+        mp_parse_input_kind_t parse_input_kind = MP_PARSE_SINGLE_INPUT;
+
+        if (ret == CHAR_CTRL_C) {
+            // cancel input
+            mp_hal_stdout_tx_str("\r\n");
+            goto input_restart;
+        } else if (ret == CHAR_CTRL_D) {
+            // EOF
+            printf("\n");
+            mp_hal_stdio_mode_orig();
+            vstr_clear(&line);
+            return 0;
+        } else if (ret == CHAR_CTRL_E) {
+            // paste mode
+            mp_hal_stdout_tx_str("\npaste mode; Ctrl-C to cancel, Ctrl-D to finish\n=== ");
+            vstr_reset(&line);
+            for (;;) {
+                char c = mp_hal_stdin_rx_chr();
+                if (c == CHAR_CTRL_C) {
+                    // cancel everything
+                    mp_hal_stdout_tx_str("\n");
+                    goto input_restart;
+                } else if (c == CHAR_CTRL_D) {
+                    // end of input
+                    mp_hal_stdout_tx_str("\n");
+                    break;
+                } else {
+                    // add char to buffer and echo
+                    vstr_add_byte(&line, c);
+                    if (c == '\r') {
+                        mp_hal_stdout_tx_str("\n=== ");
+                    } else {
+                        mp_hal_stdout_tx_strn(&c, 1);
+                    }
+                }
+            }
+            parse_input_kind = MP_PARSE_FILE_INPUT;
+        } else if (line.len == 0) {
+            if (ret != 0) {
+                printf("\n");
+            }
+            goto input_restart;
+        } else {
+            // got a line with non-zero length, see if it needs continuing
+            while (mp_repl_continue_with_input(vstr_null_terminated_str(&line))) {
+                vstr_add_byte(&line, '\n');
+                ret = readline(&line, "... ");
+                if (ret == CHAR_CTRL_C) {
+                    // cancel everything
+                    printf("\n");
+                    goto input_restart;
+                } else if (ret == CHAR_CTRL_D) {
+                    // stop entering compound statement
+                    break;
+                }
+            }
+        }
+
+        mp_hal_stdio_mode_orig();
+
+        mp_lexer_t *lex = mp_lexer_new_from_str_len(MP_QSTR__lt_stdin_gt_, line.buf, line.len, false);
+        ret = execute_from_lexer(lex, parse_input_kind, true);
+        if (ret & FORCED_EXIT) {
+            return ret;
+        }
+    }
+
+    #else
+
+    // use GNU or simple readline
 
     for (;;) {
         char *line = prompt(">>> ");
@@ -175,6 +272,8 @@ STATIC int do_repl(void) {
         }
         free(line);
     }
+
+    #endif
 }
 
 STATIC int do_file(const char *file) {
@@ -194,7 +293,7 @@ STATIC int usage(char **argv) {
 "-v : verbose (trace various operations); can be multiple\n"
 "-O[N] : apply bytecode optimizations of level N\n"
 "\n"
-"Implementation specific options:\n", argv[0]
+"Implementation specific options (-X):\n", argv[0]
 );
     int impl_opts_cnt = 0;
     printf(
@@ -204,7 +303,7 @@ STATIC int usage(char **argv) {
     impl_opts_cnt++;
 #if MICROPY_ENABLE_GC
     printf(
-"  heapsize=<n> -- set the heap size for the GC (default %ld)\n"
+"  heapsize=<n>[w][K|M] -- set the heap size for the GC (default %ld)\n"
 , heap_size);
     impl_opts_cnt++;
 #endif
@@ -252,12 +351,20 @@ STATIC void pre_process_options(int argc, char **argv) {
                         heap_size *= 1024;
                     } else if ((*end | 0x20) == 'm') {
                         heap_size *= 1024 * 1024;
+                    } else {
+                        // Compensate for ++ below
+                        --end;
+                    }
+                    if (*++end != 0) {
+                        goto invalid_arg;
                     }
                     if (word_adjust) {
                         heap_size = heap_size * BYTES_PER_WORD / 4;
                     }
 #endif
                 } else {
+invalid_arg:
+                    printf("Invalid option\n");
                     exit(usage(argv));
                 }
                 a++;
@@ -278,7 +385,22 @@ STATIC void set_sys_argv(char *argv[], int argc, int start_arg) {
 #define PATHLIST_SEP_CHAR ':'
 #endif
 
+MP_NOINLINE int main_(int argc, char **argv);
+
 int main(int argc, char **argv) {
+    #if MICROPY_PY_THREAD
+    mp_thread_init();
+    #endif
+    // We should capture stack top ASAP after start, and it should be
+    // captured guaranteedly before any other stack variables are allocated.
+    // For this, actual main (renamed main_) should not be inlined into
+    // this function. main_() itself may have other functions inlined (with
+    // their own stack variables), that's why we need this main/main_ split.
+    mp_stack_ctrl_init();
+    return main_(argc, argv);
+}
+
+MP_NOINLINE int main_(int argc, char **argv) {
     mp_stack_set_limit(40000 * (BYTES_PER_WORD / 4));
 
     pre_process_options(argc, argv);
@@ -290,10 +412,8 @@ int main(int argc, char **argv) {
 
     mp_init();
 
-    #ifndef _WIN32
     // create keyboard interrupt object
     MP_STATE_VM(keyboard_interrupt_obj) = mp_obj_new_exception(&mp_type_KeyboardInterrupt);
-    #endif
 
     char *home = getenv("HOME");
     char *path = getenv("MICROPYPATH");
@@ -311,7 +431,7 @@ int main(int argc, char **argv) {
             p++;
         }
     }
-    mp_obj_list_init(mp_sys_path, path_num);
+    mp_obj_list_init(MP_OBJ_TO_PTR(mp_sys_path), path_num);
     mp_obj_t *path_items;
     mp_obj_list_get(mp_sys_path, &path_num, &path_items);
     path_items[0] = MP_OBJ_NEW_QSTR(MP_QSTR_);
@@ -324,10 +444,12 @@ int main(int argc, char **argv) {
         }
         if (p[0] == '~' && p[1] == '/' && home != NULL) {
             // Expand standalone ~ to $HOME
-            CHECKBUF(buf, PATH_MAX);
-            CHECKBUF_APPEND(buf, home, strlen(home));
-            CHECKBUF_APPEND(buf, p + 1, (size_t)(p1 - p - 1));
-            path_items[i] = MP_OBJ_NEW_QSTR(qstr_from_strn(buf, CHECKBUF_LEN(buf)));
+            int home_l = strlen(home);
+            vstr_t vstr;
+            vstr_init(&vstr, home_l + (p1 - p - 1) + 1);
+            vstr_add_strn(&vstr, home, home_l);
+            vstr_add_strn(&vstr, p + 1, p1 - p - 1);
+            path_items[i] = mp_obj_new_str_from_vstr(&mp_type_str, &vstr);
         } else {
             path_items[i] = MP_OBJ_NEW_QSTR(qstr_from_strn(p, p1 - p));
         }
@@ -335,12 +457,12 @@ int main(int argc, char **argv) {
     }
     }
 
-    mp_obj_list_init(mp_sys_argv, 0);
+    mp_obj_list_init(MP_OBJ_TO_PTR(mp_sys_argv), 0);
 
     #if defined(MICROPY_UNIX_COVERAGE)
     {
         MP_DECLARE_CONST_FUN_OBJ(extra_coverage_obj);
-        mp_store_global(QSTR_FROM_STR_STATIC("extra_coverage"), (mp_obj_t)&extra_coverage_obj);
+        mp_store_global(QSTR_FROM_STR_STATIC("extra_coverage"), MP_OBJ_FROM_PTR(&extra_coverage_obj));
     }
     #endif
 
@@ -366,9 +488,12 @@ int main(int argc, char **argv) {
 
     const int NOTHING_EXECUTED = -2;
     int ret = NOTHING_EXECUTED;
+    bool inspect = false;
     for (int a = 1; a < argc; a++) {
         if (argv[a][0] == '-') {
-            if (strcmp(argv[a], "-c") == 0) {
+            if (strcmp(argv[a], "-i") == 0) {
+                inspect = true;
+            } else if (strcmp(argv[a], "-c") == 0) {
                 if (a + 1 >= argc) {
                     return usage(argv);
                 }
@@ -401,22 +526,24 @@ int main(int argc, char **argv) {
                     nlr_pop();
                 } else {
                     // uncaught exception
-                    return handle_uncaught_exception((mp_obj_t)nlr.ret_val) & 0xff;
+                    return handle_uncaught_exception(nlr.ret_val) & 0xff;
                 }
 
                 if (mp_obj_is_package(mod)) {
                     // TODO
-                    fprintf(stderr, "%s: -m for packages not yet implemented\n", argv[0]);
+                    mp_printf(&mp_stderr_print, "%s: -m for packages not yet implemented\n", argv[0]);
                     exit(1);
                 }
                 ret = 0;
                 break;
             } else if (strcmp(argv[a], "-X") == 0) {
                 a += 1;
+            #if MICROPY_DEBUG_PRINTERS
             } else if (strcmp(argv[a], "-v") == 0) {
                 mp_verbose_flag++;
+            #endif
             } else if (strncmp(argv[a], "-O", 2) == 0) {
-                if (isdigit(argv[a][2])) {
+                if (unichar_isdigit(argv[a][2])) {
                     MP_STATE_VM(mp_optimise_value) = argv[a][2] & 0xf;
                 } else {
                     MP_STATE_VM(mp_optimise_value) = 0;
@@ -429,8 +556,7 @@ int main(int argc, char **argv) {
             char *pathbuf = malloc(PATH_MAX);
             char *basedir = realpath(argv[a], pathbuf);
             if (basedir == NULL) {
-                fprintf(stderr, "%s: can't open file '%s': [Errno %d] ", argv[0], argv[a], errno);
-                perror("");
+                mp_printf(&mp_stderr_print, "%s: can't open file '%s': [Errno %d] %s\n", argv[0], argv[a], errno, strerror(errno));
                 // CPython exits with 2 in such case
                 ret = 2;
                 break;
@@ -447,7 +573,7 @@ int main(int argc, char **argv) {
         }
     }
 
-    if (ret == NOTHING_EXECUTED) {
+    if (ret == NOTHING_EXECUTED || inspect) {
         if (isatty(0)) {
             prompt_read_history();
             ret = do_repl();
@@ -486,14 +612,6 @@ uint mp_import_stat(const char *path) {
         }
     }
     return MP_IMPORT_STAT_NO_EXIST;
-}
-
-int DEBUG_printf(const char *fmt, ...) {
-    va_list ap;
-    va_start(ap, fmt);
-    int ret = vfprintf(stderr, fmt, ap);
-    va_end(ap);
-    return ret;
 }
 
 void nlr_jump_fail(void *val) {
